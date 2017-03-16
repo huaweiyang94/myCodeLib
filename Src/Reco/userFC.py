@@ -1,4 +1,4 @@
-# -*- coding=utf-8 -*-
+#  -*- coding=utf-8 -*-
 
 import math
 import sys
@@ -10,7 +10,7 @@ from texttable import Texttable
 #
 #
 #
-def calcCosDistSpe(user1,user2):
+def calcCosDistSpe(user1,user2):      #user1=[(电影id,电影评分)...]
     avg_x=0.0
     avg_y=0.0
     for key in user1:
@@ -19,23 +19,23 @@ def calcCosDistSpe(user1,user2):
     
     for key in user2:
         avg_y+=key[1]
-    avg_y=avg_y/len(user2)
+     avg_y=avg_y/len(user2)
     
     u1_u2=0.0
     for key1 in user1:
         for key2 in user2:
-            if key1[1] > avg_x and key2[1]>avg_y and key1[0]==key2[0]:
+            if key1[1] > avg_x and key2[1]>avg_y and key1[0]==key2[0]:    #两用户都看过并喜欢（rating > avg_rating)的电影
                 u1_u2+=1
     u1u2=len(user1)*len(user2)*1.0
     sx_sy=u1_u2/math.sqrt(u1u2)
     return sx_sy
 
 
-#
+ #
 #   计算余弦距离
 #
 #
-def calcCosDist(user1,user2):
+def calcCosDist(user1,user2):                  #sim_xy=cosθ=x*y/(|x|*|y|)
     sum_x=0.0
     sum_y=0.0
     sum_xy=0.0
@@ -51,33 +51,33 @@ def calcCosDist(user1,user2):
     sx_sy=math.sqrt(sum_x*sum_y) 
     return sum_xy/sx_sy
 
-
+ 
 #
 #
 #   相似余弦距离
 #
 #
 #
-def calcSimlaryCosDist(user1,user2):
+def calcSimlaryCosDist(user1,user2):                 #person correlation
     sum_x=0.0
     sum_y=0.0
-    sum_xy=0.0
+     sum_xy=0.0
     avg_x=0.0
     avg_y=0.0
     for key in user1:
         avg_x+=key[1]
-    avg_x=avg_x/len(user1)
+    avg_x=avg_x/len(user1)                           #！avg改进：仅计算相同项的平均值
     
     for key in user2:
         avg_y+=key[1]
-    avg_y=avg_y/len(user2)
+    avg_y=avg_y/len(user2)                           #同上
     
     for key1 in user1:
         for key2 in user2:
             if key1[0]==key2[0] :
                 sum_xy+=(key1[1]-avg_x)*(key2[1]-avg_y)
                 sum_y+=(key2[1]-avg_y)*(key2[1]-avg_y)
-        sum_x+=(key1[1]-avg_x)*(key1[1]-avg_x)
+        sum_x+=(key1[1]-avg_x)*(key1[1]-avg_x)       #？？？？
     
     if sum_xy == 0.0 :
         return 0
@@ -89,12 +89,12 @@ def calcSimlaryCosDist(user1,user2):
 #   读取文件
 #
 #
-def readFile(file_name):
+def readFile(file_name):                         #逐行读取数据
     contents_lines=[]
     f=open(file_name,"r")
     contents_lines=f.readlines()
     f.close()
-    return contents_lines
+    return contents_lines                        #content_lines=['user_Id,move_Id,ratings,timestamp\n','1,31,2.5,126975232\n',...]]
 
 
 
@@ -105,10 +105,10 @@ def readFile(file_name):
 #
 def getRatingInformation(ratings):
     rates=[]
-    for line in ratings:
-        rate=line.split("\t")
-        rates.append([int(rate[0]),int(rate[1]),int(rate[2])])
-    return rates
+    for line in ratings:                                             #ratings[1:]
+        rate=line.split("\t")                                        #","
+        rates.append([int(rate[0]),int(rate[1]),int(rate[2])])       #float
+    return rates                                                     #rates=[[1,31,2.5],[1,1029,3.0]...]
 
 
 #
