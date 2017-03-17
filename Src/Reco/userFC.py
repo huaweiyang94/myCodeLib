@@ -1,12 +1,11 @@
 # -*- coding=utf-8 -*-
-
 import math
 import sys
 from texttable import Texttable
 
 
 #
-#   使用 |A&B|/sqrt(|A || B |)计算余弦距离
+ #   使用 |A&B|/sqrt(|A || B |)计算余弦距离
 #
 #
 #
@@ -24,7 +23,7 @@ def calcCosDistSpe(user1,user2):
     u1_u2=0.0
     for key1 in user1:
         for key2 in user2:
-            if key1[1] > avg_x and key2[1]>avg_y and key1[0]==key2[0]:
+            if key1[1] > avg_x and key2[1]>avg_y and key1[0]==key2[0]:      #两用户都看过并喜欢（rating > avg_rating)的电影
                 u1_u2+=1
     u1u2=len(user1)*len(user2)*1.0
     sx_sy=u1_u2/math.sqrt(u1u2)
@@ -35,7 +34,7 @@ def calcCosDistSpe(user1,user2):
 #   计算余弦距离
 #
 #
-def calcCosDist(user1,user2):
+def calcCosDist(user1,user2):                                               #sim_xy=cosθ=x*y/(|x|*|y|)
     sum_x=0.0
     sum_y=0.0
     sum_xy=0.0
@@ -54,11 +53,11 @@ def calcCosDist(user1,user2):
 
 #
 #
-#   相似余弦距离
+#   相似余弦距离                                                  #person correlation
 #
 #
 #
-def calcSimlaryCosDist(user1,user2):
+def calcSimlaryCosDist(user1,user2):                             #user1=[[电影1,评分1],[电影2,评分2],...]
     sum_x=0.0
     sum_y=0.0
     sum_xy=0.0
@@ -66,21 +65,20 @@ def calcSimlaryCosDist(user1,user2):
     avg_y=0.0
     for key in user1:
         avg_x+=key[1]
-    avg_x=avg_x/len(user1)
+    avg_x=avg_x/len(user1)                                       #！avg改进：仅计算相同项的平均值
     
     for key in user2:
         avg_y+=key[1]
-    avg_y=avg_y/len(user2)
+    avg_y=avg_y/len(user2)                                      #同上
     
     for key1 in user1:
         for key2 in user2:
-            if key1[0]==key2[0] :
+            if key1[0]==key2[0] :                               #仅选出两人同时看过的电影进行相似度计算
                 sum_xy+=(key1[1]-avg_x)*(key2[1]-avg_y)
                 sum_y+=(key2[1]-avg_y)*(key2[1]-avg_y)
-        sum_x+=(key1[1]-avg_x)*(key1[1]-avg_x)
+        sum_x+=(key1[1]-avg_x)*(key1[1]-avg_x)                  #???
     
-    if sum_xy == 0.0 :
-        return 0
+    if sum_xy == 0.0 :        return 0
     sx_sy=math.sqrt(sum_x*sum_y) 
     return sum_xy/sx_sy
     
@@ -94,7 +92,7 @@ def readFile(file_name):
     f=open(file_name,"r")
     contents_lines=f.readlines()
     f.close()
-    return contents_lines
+    return contents_lines                            #content_lines=['user_Id,move_Id,ratings,timestamp\n','1,31,2.5,126975232\n',...]]
 
 
 
@@ -105,10 +103,10 @@ def readFile(file_name):
 #
 def getRatingInformation(ratings):
     rates=[]
-    for line in ratings:
-        rate=line.split("\t")
-        rates.append([int(rate[0]),int(rate[1]),int(rate[2])])
-    return rates
+    for line in ratings:                                                       #ratings[1:]
+        rate=line.split("\t")                                                  #","
+        rates.append([int(rate[0]),int(rate[1]),int(rate[2])])                 #float
+    return rates                                                               #rates=[[1,31,2.5],[1,1029,3.0],...]
 
 
 #
@@ -122,7 +120,7 @@ def getRatingInformation(ratings):
 def createUserRankDic(rates):
     user_rate_dic={}
     item_to_user={}
-    for i in rates:
+    for i in rates:                                    #i=[1,31,2.5],...
         user_rank=(i[1],i[2])
         if i[0] in user_rate_dic:
             user_rate_dic[i[0]].append(user_rank)
@@ -134,62 +132,60 @@ def createUserRankDic(rates):
         else:
             item_to_user[i[1]]=[i[0]]
             
-    return user_rate_dic,item_to_user
-
+    return user_rate_dic,item_to_user                   #user_rate_dic={1:[[31,2.5],[1029,3.0],...],2:[[31,2.5],[1029,3.0],...],...}
+                                                        #item_to_user={31:[1,2,...],1029:[1,2,...],...}
 
 #
 #   计算与指定用户最相近的邻居
 #   输入:指定用户ID，所以用户数据，所以物品数据
 #   输出:与指定用户最相邻的邻居列表
 #
-def calcNearestNeighbor(userid,users_dic,item_dic):
+def calcNearestNeighbor(userid,users_dic,item_dic):     
     neighbors=[]
     #neighbors.append(userid)
-    for item in users_dic[userid]:
-        for neighbor in item_dic[item[0]]:
+    for item in users_dic[userid]:                      #user_dic[userid]=[[31,2.5],[1029,3.0],...]     item=[31,2.5],...
+        for neighbor in item_dic[item[0]]:              
             if neighbor != userid and neighbor not in neighbors: 
-                neighbors.append(neighbor)
-      
+                neighbors.append(neighbor)              #neighbors=[1,2,3,...]:看过userid看过的电影（至少一部）的用户列表
+    
     neighbors_dist=[]
-    for neighbor in neighbors:
+    for neighbor in neighbors:                                          #users_dic[userid]=[[电影1,评分1],[电影2,评分2],...]
         dist=calcSimlaryCosDist(users_dic[userid],users_dic[neighbor])  #calcSimlaryCosDist  calcCosDist calcCosDistSpe
         neighbors_dist.append([dist,neighbor])
     neighbors_dist.sort(reverse=True)
     #print neighbors_dist
-    return  neighbors_dist
-
-
+    return  neighbors_dist                                              #neighbors_dist=[[相似度1,用户1],[相似度2,用户2],...]从高到低排序
 #
 #   使用UserFC进行推荐
 #   输入：文件名,用户ID,邻居数量
 #   输出：推荐的电影ID,输入用户的电影列表,电影对应用户的反序表，邻居列表
 #
-def recommendByUserFC(file_name,userid,k=5):
+def recommendByUserFC(file_name,userid,k=5):                 #找出与userid相似度最高的k位邻居，将所有他们看过的电影列出并评分（相似度累加）
     
     #读取文件数据
-    test_contents=readFile(file_name)
-    
+    test_contents=readFile(file_name)    
     #文件数据格式化成二维数组 List[[用户id,电影id,电影评分]...] 
-    test_rates=getRatingInformation(test_contents)
+    test_rates=getRatingInformation(test_contents)           #test_rates=[[user1,movie1,rating1],[user2,movie2,rating2],...]
     
     #格式化成字典数据 
     #    1.用户字典：dic[用户id]=[(电影id,电影评分)...]
     #    2.电影字典：dic[电影id]=[用户id1,用户id2...]
-    test_dic,test_item_to_user=createUserRankDic(test_rates)
+    test_dic,test_item_to_user=createUserRankDic(test_rates) #test_dic={1:[[31,2.5],[1029,3.0],...],2:[[31,2.5],[1029,3.0],...],...}
+                                                             #test_item_to_user={31:[1,2,...],1029:[1,2,...],...}
     
     #寻找邻居
-    neighbors=calcNearestNeighbor(userid,test_dic,test_item_to_user)[:k]
+    neighbors=calcNearestNeighbor(userid,test_dic,test_item_to_user)[:k]  #neighbors=[[相似度1,用户1],[相似度2,用户2],...]从高到低排序
         
     recommend_dic={}
     for neighbor in neighbors:
         neighbor_user_id=neighbor[1]
-        movies=test_dic[neighbor_user_id]
+        movies=test_dic[neighbor_user_id]                                 #movies=[[31,2.5],[1029,3.0],...] for neighbor_user_id
         for movie in movies:
             #print movie
             if movie[0] not in recommend_dic:
                 recommend_dic[movie[0]]=neighbor[0]
             else:
-                recommend_dic[movie[0]]+=neighbor[0]
+                recommend_dic[movie[0]]+=neighbor[0]                      #recommend_dic={电影1:累加相似度1,电影2:累加相似度2,...}
     #print len(recommend_dic)
     
     #建立推荐列表
@@ -199,11 +195,10 @@ def recommendByUserFC(file_name,userid,k=5):
         recommend_list.append([recommend_dic[key],key])
     
     
-    recommend_list.sort(reverse=True)
+    recommend_list.sort(reverse=True)                           #recommend_list=[[累加相似度1,电影1],[累加相似度2,电影2],...]从高到低排序
     #print recommend_list
-    user_movies = [ i[0] for i in test_dic[userid]]
-
-    return [i[1] for i in recommend_list],user_movies,test_item_to_user,neighbors
+    user_movies = [ i[0] for i in test_dic[userid]]             #user_movies=[电影1,电影2,...]  用户看过的电影
+    return [i[1] for i in recommend_list],user_movies,test_item_to_user,neighbors#[i[1] for i in recommend_list]：推荐的电影名（所有，高到低）
     
     
 
@@ -220,7 +215,7 @@ def getMoviesList(file_name):
     for movie in movies_contents:
         movie_info=movie.split("|")
         movies_info[int(movie_info[0])]=movie_info[1:]
-    return movies_info
+    return movies_info                                       #movie_info={id1:[name1,time1],id2:[name2,time2],...}
     
     
     
@@ -229,9 +224,9 @@ def getMoviesList(file_name):
 if __name__ == '__main__':
     reload(sys)
     sys.setdefaultencoding('utf-8')
-    movies=getMoviesList("/Users/wuyinghao/Downloads/ml-100k/u.item")
+    movies=getMoviesList("/Users/wuyinghao/Downloads/ml-100k/u.item")    #movies={id1:[name1,time1],id2:[name2,time2],...}
     recommend_list,user_movie,items_movie,neighbors=recommendByUserFC("/Users/wuyinghao/Downloads/ml-100k/u.data",179,80)
-    neighbors_id=[ i[1] for i in neighbors]
+    neighbors_id=[ i[1] for i in neighbors]                              #neighbors=[[相似度1,用户1],[相似度2,用户2],...]从高到低排序
     table = Texttable()
     table.set_deco(Texttable.HEADER)
     table.set_cols_dtype(['t',  # text 
@@ -240,9 +235,9 @@ if __name__ == '__main__':
     table.set_cols_align(["l", "l", "l"])
     rows=[]
     rows.append([u"movie name",u"release", u"from userid"])
-    for movie_id in recommend_list[:20]:
+    for movie_id in recommend_list[:20]:                            #recommend_list=[推荐电影1,推荐电影2,...]从高到低排序
         from_user=[]
-        for user_id in items_movie[movie_id]:
+        for user_id in items_movie[movie_id]:                       #items_movie={31:[1,2,...],1029:[1,2,...],...}
             if user_id in neighbors_id:
                 from_user.append(user_id)
         rows.append([movies[movie_id][0],movies[movie_id][1],""])
